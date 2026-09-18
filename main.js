@@ -18,6 +18,8 @@ const I18N = {
     option_follow: '跟随 Obsidian 原生设置',
     option_reading: '阅读模式',
     option_edit: '编辑模式',
+    setting_fm_title: 'frontmatter 用法（按笔记设置）',
+    setting_fm_desc: '在笔记 frontmatter 写 open-mode，打开时自动切换。可选值——阅读模式：reading / read / preview；编辑模式：edit / editing / source / live。优先级：frontmatter > 全局默认.',
     setting_docs: '使用文档',
     setting_docs_desc: '在 GitHub 查看完整使用说明',
     btn_github: 'GitHub',
@@ -32,6 +34,8 @@ const I18N = {
     option_follow: 'Follow Obsidian default',
     option_reading: 'Reading view',
     option_edit: 'Editing view',
+    setting_fm_title: 'frontmatter usage (per note)',
+    setting_fm_desc: 'Add open-mode to a note frontmatter. Accepted values - Reading: reading / read / preview; Editing: edit / editing / source / live. Priority: frontmatter > global default.',
     setting_docs: 'Documentation',
     setting_docs_desc: 'View the full usage guide on GitHub',
     btn_github: 'GitHub',
@@ -154,6 +158,12 @@ class XuViewModeSettingTab extends PluginSettingTab {
           }));
 
     containerEl.createEl('hr');
+
+    // frontmatter 用法展示（可选值一目了然）
+    const fm = containerEl.createDiv({ cls: 'xu-view-mode-fm' });
+    fm.createDiv({ cls: 'xu-view-mode-fm-title', text: this.t('setting_fm_title') });
+    fm.createEl('code', { text: 'open-mode: reading | edit' });
+    fm.createDiv({ cls: 'xu-view-mode-fm-desc', text: this.t('setting_fm_desc') });
 
     // 默认打开模式（frontmatter 未设置时的回退值）
     new Setting(containerEl)

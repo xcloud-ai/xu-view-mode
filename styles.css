@@ -1,1 +1,29 @@
 /* XU View Mode — 所有 class 加前缀 xu-view-mode- */
+
+/* 设置页 frontmatter 用法展示块 */
+.xu-view-mode-fm {
+  padding: 10px 12px;
+  margin: 6px 0 14px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  background: var(--background-secondary);
+}
+.xu-view-mode-fm-title {
+  font-weight: var(--font-medium);
+  font-size: var(--font-ui-small);
+  color: var(--text-normal);
+}
+.xu-view-mode-fm code {
+  display: inline-block;
+  margin: 6px 0;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--background-modifier-hover);
+  font-size: var(--font-ui-small);
+}
+.xu-view-mode-fm-desc {
+  margin-top: 4px;
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+  line-height: 1.5;
+}
