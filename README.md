@@ -21,25 +21,68 @@ Manual install / 手动安装:
 
 ## Usage / 使用方法
 
-### 按笔记设置（frontmatter）
+### 什么是 frontmatter？
 
-在笔记 frontmatter 写：
+就是笔记**最顶部**两条 `---` 之间的那块区域。没有的话，在笔记第一行上方手写两条 `---` 即可。
+
+### 第一步：给笔记加上 open-mode
 
 ```yaml
 ---
+title: 我的笔记
 open-mode: reading
 ---
 ```
 
-可选值：`reading`（阅读模式）/ `edit`（编辑模式）。也接受 `read` / `preview` / `editing` / `source` / `live` 等常见写法。
+保存后，重新打开这个笔记 → 自动进入**阅读模式**。想打开就是编辑状态，把值换成 `edit` 即可。
 
-### 全局默认
+### 可选值（只需记两个）
 
-设置 -> XU View Mode -> 默认打开模式：阅读模式 / 编辑模式 / 跟随 Obsidian 原生设置。
+| 值 | 打开效果 | 适合场景 |
+|---|---|---|
+| `reading` | 阅读模式 | 文档、成品笔记、只看不改 |
+| `edit` | 编辑模式 | 日记、草稿、打开就写 |
+
+### 兼容写法（不用记，知道有就行）
+
+其他插件的常见写法在这里同样有效，写错也不怕：
+
+| 你写的 | 等同于 |
+|---|---|
+| `read` / `preview` | `reading` |
+| `editing` / `source` / `live` | `edit` |
+
+推荐统一用 `reading` / `edit`，最短最直观。
+
+### 第二步（可选）：设置全局默认
+
+设置 → 第三方插件 → XU View Mode → 默认打开模式：
+
+- **跟随 Obsidian 原生设置**（默认）：不干预没有 `open-mode` 的笔记，行为和没装插件一样
+- **阅读模式**：所有没写 `open-mode` 的笔记都用阅读模式打开
+- **编辑模式**：所有没写 `open-mode` 的笔记都用编辑模式打开
+
+单个笔记的 `open-mode` 永远优先于全局默认。
+
+### 行为说明（为什么叫"不打扰"）
+
+- **只在第一次生效**：标签页第一次打开某笔记时应用一次；之后你手动点右上角的「阅读/编辑」切换按钮，插件**不会**自动改回
+- 同一标签页切走再切回同一笔记 → 不重复强制（尊重你刚才的手动切换）
+- 新标签页（或重启后）再打开同一笔记 → 重新应用
+- **只读不写**：插件只读 frontmatter，永不修改你的笔记内容
 
 ### Usage (English)
 
-Add `open-mode: reading | edit` to frontmatter. Notes without it use the global default (Settings -> XU View Mode). Accepted aliases: read / preview / editing / source / live.
+Add `open-mode: reading | edit` to a note's frontmatter to control how it opens.
+
+| Value | Opens in |
+|---|---|
+| `reading` | Reading view |
+| `edit` | Editing view (live preview) |
+
+Aliases also accepted: `read` / `preview` (reading), `editing` / `source` / `live` (editing).
+
+Global default (Settings -> XU View Mode): Follow Obsidian default / Reading / Editing. Per-note frontmatter always wins. Applies on first open only; manual switching is never overridden.
 
 ## Features / 功能
 
