@@ -26,7 +26,7 @@ const I18N: Record<string, I18NDict> = {
     option_reading: "阅读模式",
     option_edit: "编辑模式",
     setting_fm_title: "frontmatter 用法（按笔记设置）",
-    setting_fm_desc: "在笔记 frontmatter 写 open-mode，打开时自动切换。可选值——阅读模式：reading / read / preview；编辑模式：edit / editing / source / live。优先级：frontmatter > 全局默认.",
+    setting_fm_desc: "在笔记顶部 frontmatter 写 open-mode: edit，打开就进编辑模式；写 open-mode: reading，打开就进阅读模式。等价写法：edit 也可写 editing / source / live，reading 也可写 read / preview。优先级：笔记设置 > 全局默认.",
     setting_docs: "使用文档",
     setting_docs_desc: "在 GitHub 查看完整使用说明",
     btn_github: "GitHub",
@@ -42,7 +42,7 @@ const I18N: Record<string, I18NDict> = {
     option_reading: "Reading view",
     option_edit: "Editing view",
     setting_fm_title: "frontmatter usage (per note)",
-    setting_fm_desc: "Add open-mode to a note frontmatter. Accepted values - Reading: reading / read / preview; Editing: edit / editing / source / live. Priority: frontmatter > global default.",
+    setting_fm_desc: "Write open-mode: edit at the top of a note to open it in editing view; open-mode: reading for reading view. Aliases: edit = editing / source / live; reading = read / preview. Priority: note setting > global default.",
     setting_docs: "Documentation",
     setting_docs_desc: "View the full usage guide on GitHub",
     btn_github: "GitHub",
@@ -70,7 +70,7 @@ export default class XuViewMode extends Plugin {
     // 事件注册延后到布局就绪（官方 load-time 性能规范：启动期零开销）
     this.app.workspace.onLayoutReady(() => {
       this.registerEvent(
-        this.app.workspace.on("file-open", (file: TFile) => this.handleFileOpen(file))
+        this.app.workspace.on("active-leaf-change", () => this.handleFileOpen(this.app.workspace.getActiveFile()))
       );
       // 布局就绪后 file-open 不再为已打开文件触发，对当前活动文件补一次
       const active = this.app.workspace.getActiveFile();
@@ -102,6 +102,7 @@ export default class XuViewMode extends Plugin {
   }
 
   handleFileOpen(file: TFile): void {
+    if (!file) return; // active-leaf-change 触发时可能无活动文件
     // 快速路径：活动视图非 markdown（如画板/PDF/搜索）直接返回，微秒级
     const leaf = this.app.workspace.activeLeaf;
     const view = leaf && leaf.view;
