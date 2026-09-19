@@ -1,7 +1,7 @@
 # 打开模式记忆
 
 > [!NOTE] 中文说明
-> **打开模式记忆**：按笔记元数据定义打开时用阅读或编辑模式，全局默认可设，性能无感
+> **打开模式记忆**：按笔记元数据定义打开时用阅读或编辑模式，全局默认可设，性能无感。
 
 在笔记 frontmatter 写 `open-mode`，打开时自动切换阅读或编辑模式；未写的笔记按全局默认。仅首次打开生效，手动切换不被打回。
 
@@ -9,30 +9,47 @@
 
 Set `open-mode` in frontmatter to control how each note opens (reading or editing); notes without it fall back to a global default. Applies on first open only, and manual switching is never overridden.
 
+## 功能特性
+
+- **frontmatter 强制模式**：`open-mode` 定义单篇笔记打开用阅读或编辑模式
+- **全局默认**：未设置的笔记按全局默认（阅读/编辑/跟随原生）打开
+- **不打扰**：仅首次打开生效，手动切换不被打回（同一标签页不重复强制）
+- **性能无感**：事件注册延后到布局就绪，metadataCache O(1) 读取，模式相同则零操作
+- **多端支持**：桌面与移动端可用，不修改任何笔记数据
+
+### Features
+
+- **Per-note open mode**: `open-mode` frontmatter forces reading or editing view for that note
+- **Global default**: notes without `open-mode` follow the global default (follow / reading / editing)
+- **Non-intrusive**: applies on first open only; manual switching is never overridden
+- **Zero-perception performance**: event registration deferred to layout-ready, O(1) metadata reads, no-op when already in target mode
+- **Multi-platform**: desktop and mobile, never modifies note data
+
 ## 安装
 
 ### 方式一：从 Obsidian 社区目录安装（推荐）
 
 1. 打开 Obsidian 设置 → 社区插件
-2. 点击「浏览」，搜索 XU View Mode
+2. 点击「浏览」，搜索 "XU View Mode"
 3. 点击「安装」，然后「启用」
 
 ### 方式二：手动安装
 
-1. 从 [最新 Release](https://github.com/xcloud-ai/xu-view-mode/releases) 下载 main.js、manifest.json、styles.css 三个文件
-2. 在库中创建目录 .obsidian/plugins/xu-view-mode/
-3. 将三个文件放入该目录，重启 Obsidian 后启用
+1. 从 [最新 Release](https://github.com/xcloud-ai/xu-view-mode/releases) 下载 `main.js`、`manifest.json`、`styles.css` 三个文件
+2. 在 vault 中创建目录 `.obsidian/plugins/xu-view-mode/`
+3. 将三个文件放入该目录
+4. 打开 Obsidian 设置 → 社区插件，找到 XU View Mode 并开启
 
 ### Installation
 
 **From Obsidian Community Directory:**
 1. Open Obsidian Settings → Community Plugins
-2. Click Browse and search for XU View Mode
-3. Click Install, then Enable
+2. Click "Browse" and search for "XU View Mode"
+3. Click "Install", then "Enable"
 
 **Manual Installation:**
-1. Download main.js, manifest.json, styles.css from the [latest release](https://github.com/xcloud-ai/xu-view-mode/releases)
-2. Put them into <vault>/.obsidian/plugins/xu-view-mode/
+1. Download `main.js`, `manifest.json`, `styles.css` from the [latest release](https://github.com/xcloud-ai/xu-view-mode/releases)
+2. Put them in `<vault>/.obsidian/plugins/xu-view-mode/`
 3. Enable in Settings → Community Plugins
 
 ## 使用方法
@@ -100,28 +117,13 @@ Aliases also accepted: `read` / `preview` (reading), `editing` / `source` / `liv
 
 Global default (Settings -> XU View Mode): Follow Obsidian default / Reading / Editing. Per-note frontmatter always wins. Applies on first open only; manual switching is never overridden.
 
-## 功能特性
-
-- **frontmatter 强制模式**：`open-mode` 定义单篇笔记打开用阅读或编辑模式
-- **全局默认**：未设置的笔记按全局默认（阅读/编辑/跟随原生）打开
-- **不打扰**：仅首次打开生效，手动切换不被打回（同一标签页不重复强制）
-- **性能无感**：事件注册延后到布局就绪，metadataCache O(1) 读取，模式相同则零操作
-- **多端支持**：桌面与移动端可用，不修改任何笔记数据
-
-### Features
-
-- **Per-note open mode**: `open-mode` frontmatter forces reading or editing view for that note
-- **Global default**: notes without `open-mode` follow the global default (follow / reading / editing)
-- **Non-intrusive**: applies on first open only; manual switching is never overridden
-- **Zero-perception performance**: event registration deferred to layout-ready, O(1) metadata reads, no-op when already in target mode
-- **Multi-platform**: desktop and mobile, never modifies note data
-
 ## 设置说明
 
 | 设置项 | 说明 |
 |--------|------|
 | 界面语言 | 中文 / English 切换 |
 | 默认打开模式 | 跟随 Obsidian 原生设置（默认）/ 阅读模式 / 编辑模式，仅对未写 open-mode 的笔记生效 |
+
 ## 技术说明
 
 - frontmatter 键 `open-mode` 只读不写；不修改用户数据
