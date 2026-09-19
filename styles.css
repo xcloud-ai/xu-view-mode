@@ -13,13 +13,14 @@
   font-size: var(--font-ui-small);
   color: var(--text-normal);
 }
-.xu-view-mode-fm code {
-  display: inline-block;
+.xu-view-mode-fm pre {
   margin: 6px 0;
-  padding: 2px 8px;
+  padding: 6px 10px;
   border-radius: 4px;
   background: var(--background-modifier-hover);
   font-size: var(--font-ui-small);
+  font-family: var(--font-monospace);
+  white-space: pre;
 }
 .xu-view-mode-fm-desc {
   margin-top: 4px;

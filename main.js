@@ -19,7 +19,7 @@ const I18N = {
     option_reading: '阅读模式',
     option_edit: '编辑模式',
     setting_fm_title: 'frontmatter 用法（按笔记设置）',
-    setting_fm_desc: '在笔记顶部 frontmatter 写 open-mode: edit，打开就进编辑模式；写 open-mode: reading，打开就进阅读模式。等价写法：edit 也可写 editing / source / live，reading 也可写 read / preview。优先级：笔记设置 > 全局默认.',
+    setting_fm_desc: '在笔记最顶部写上例三行，这篇笔记打开就进编辑模式；把 edit 改成 reading 则打开进阅读模式。等价写法：edit 也可写 editing / source / live，reading 也可写 read / preview，大小写均可。优先级：笔记设置 > 全局默认.',
     setting_docs: '使用文档',
     setting_docs_desc: '在 GitHub 查看完整使用说明',
     btn_github: 'GitHub',
@@ -35,7 +35,7 @@ const I18N = {
     option_reading: 'Reading view',
     option_edit: 'Editing view',
     setting_fm_title: 'frontmatter usage (per note)',
-    setting_fm_desc: 'Write open-mode: edit at the top of a note to open it in editing view; open-mode: reading for reading view. Aliases: edit = editing / source / live; reading = read / preview. Priority: note setting > global default.',
+    setting_fm_desc: 'Add the three lines above to the top of a note to open it in editing view; change edit to reading for reading view. Aliases: edit = editing / source / live; reading = read / preview (case-insensitive). Priority: note setting > global default.',
     setting_docs: 'Documentation',
     setting_docs_desc: 'View the full usage guide on GitHub',
     btn_github: 'GitHub',
@@ -163,7 +163,7 @@ class XuViewModeSettingTab extends PluginSettingTab {
     // frontmatter 用法展示（可选值一目了然）
     const fm = containerEl.createDiv({ cls: 'xu-view-mode-fm' });
     fm.createDiv({ cls: 'xu-view-mode-fm-title', text: this.t('setting_fm_title') });
-    fm.createEl('code', { text: 'open-mode: reading | edit' });
+    fm.createEl('pre', { cls: 'xu-view-mode-fm-code', text: '---\nopen-mode: edit\n---' });
     fm.createDiv({ cls: 'xu-view-mode-fm-desc', text: this.t('setting_fm_desc') });
 
     // 默认打开模式（frontmatter 未设置时的回退值）
