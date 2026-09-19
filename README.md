@@ -60,32 +60,33 @@ Set `open-mode` in frontmatter to control how each note opens (reading or editin
 
 ### 第一步：给笔记加上 open-mode
 
+在笔记最顶部写：
+
 ```yaml
 ---
-title: 我的笔记
-open-mode: reading
+open-mode: edit
 ---
 ```
 
-保存后，重新打开这个笔记 → 自动进入**阅读模式**。想打开就是编辑状态，把值换成 `edit` 即可。
+保存后，重新打开这个笔记 → 自动进入**编辑模式**。把 `edit` 改成其他支持的模式，即可改变这篇笔记的打开方式：
 
-### 可选值（只需记两个）
+### 支持的模式
 
 | 值 | 打开效果 | 适合场景 |
 |---|---|---|
-| `reading` | 阅读模式 | 文档、成品笔记、只看不改 |
 | `edit` | 编辑模式 | 日记、草稿、打开就写 |
+| `reading` | 阅读模式 | 文档、成品笔记、只看不改 |
 
 ### 兼容写法（不用记，知道有就行）
 
-其他插件的常见写法在这里同样有效，写错也不怕：
+其他插件的常见写法在这里同样有效，大小写均可；写错了等同于没写，按全局默认打开：
 
 | 你写的 | 等同于 |
 |---|---|
 | `read` / `preview` | `reading` |
 | `editing` / `source` / `live` | `edit` |
 
-推荐统一用 `reading` / `edit`，最短最直观。
+推荐统一用 `edit` / `reading`，最短最直观。
 
 ### 第二步（可选）：设置全局默认
 
@@ -106,14 +107,20 @@ open-mode: reading
 
 ### Usage
 
-Add `open-mode: reading | edit` to a note's frontmatter to control how it opens.
+Add the following to a note's frontmatter to control how it opens:
+
+```yaml
+---
+open-mode: edit
+---
+```
 
 | Value | Opens in |
 |---|---|
-| `reading` | Reading view |
 | `edit` | Editing view (live preview) |
+| `reading` | Reading view |
 
-Aliases also accepted: `read` / `preview` (reading), `editing` / `source` / `live` (editing).
+Aliases also accepted (case-insensitive): `editing` / `source` / `live` (edit), `read` / `preview` (reading). Invalid values are ignored and fall back to the global default.
 
 Global default (Settings -> XU View Mode): Follow Obsidian default / Reading / Editing. Per-note frontmatter always wins. Applies on first open only; manual switching is never overridden.
 
