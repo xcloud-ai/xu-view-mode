@@ -3,18 +3,18 @@
 > [!NOTE] 中文说明
 > **打开模式记忆**：按笔记元数据定义打开时用阅读或编辑模式，全局默认可设，性能无感。
 
-在笔记 frontmatter 写 `open-mode`，打开时自动切换阅读或编辑模式；未写的笔记按全局默认。仅首次打开生效，手动切换不被打回。
+在笔记 frontmatter 写 `open-mode`，打开时自动切换阅读或编辑模式；未写的笔记按全局默认。每次打开都按 frontmatter 生效，查看期间手动切换不被打回。
 
 > English description below for review purposes. / 以下为英文说明，用于过审。
 
-Set `open-mode` in frontmatter to control how each note opens (reading or editing); notes without it fall back to a global default. Applies on first open only, and manual switching is never overridden.
+Set `open-mode` in frontmatter to control how each note opens (reading or editing); notes without it fall back to a global default. The mode is applied every time the note opens, while manual switching is kept during the current view.
 
 ## 功能特性
 
 - **frontmatter 强制模式**：`open-mode` 定义单篇笔记打开用阅读或编辑模式
 - **全局默认**：未设置的笔记按全局默认打开（默认阅读，可改编辑/跟随原生）
 - **兼容老插件**：识别 Force note view mode 的 `obsidianUIMode` 键，旧笔记零改动迁移
-- **不打扰**：仅首次打开生效，手动切换不被打回（同一标签页不重复强制）
+- **不打扰**：查看期间手动切换保持不打回；导航、后退或重新打开时按 frontmatter 重新生效
 - **性能无感**：事件注册延后到布局就绪，metadataCache O(1) 读取，模式相同则零操作
 - **多端支持**：桌面与移动端可用，不修改任何笔记数据
 
@@ -23,7 +23,7 @@ Set `open-mode` in frontmatter to control how each note opens (reading or editin
 - **Per-note open mode**: `open-mode` frontmatter forces reading or editing view for that note
 - **Global default**: notes without `open-mode` follow the global default (reading by default; editing / follow also available)
 - **Legacy-friendly**: recognizes the `obsidianUIMode` key from Force note view mode, so existing notes migrate with zero changes
-- **Non-intrusive**: applies on first open only; manual switching is never overridden
+- **Non-intrusive**: manual switching is kept during the current view; navigating away and reopening reapplies the frontmatter mode
 - **Zero-perception performance**: event registration deferred to layout-ready, O(1) metadata reads, no-op when already in target mode
 - **Multi-platform**: desktop and mobile, never modifies note data
 
@@ -103,11 +103,10 @@ open-mode: edit
 
 单个笔记的 `open-mode` 永远优先于全局默认。
 
-### 行为说明（为什么叫"不打扰"）
+### 行为说明（怎么算"不打扰"）
 
-- **只在第一次生效**：标签页第一次打开某笔记时应用一次；之后你手动点右上角的「阅读/编辑」切换按钮，插件**不会**自动改回
-- 同一标签页切走再切回同一笔记 → 不重复强制（尊重你刚才的手动切换）
-- 新标签页（或重启后）再打开同一笔记 → 重新应用
+- **查看期间不打回**：打开笔记后，你手动点右上角的「阅读/编辑」切换按钮，插件**不会**自动改回
+- **重新打开重新生效**：导航到别的笔记、点后退/前进、新标签页或重启后再打开这篇笔记 → 按 frontmatter 重新应用
 - **只读不写**：插件只读 frontmatter，永不修改你的笔记内容
 
 ### Usage
@@ -129,7 +128,7 @@ Aliases also accepted (case-insensitive): `editing` / `source` / `live` (edit), 
 
 > **Migrating from Force note view mode?** The legacy `obsidianUIMode` key (`preview` / `source` / `live`) is also recognized, so your existing notes work without any changes. If both keys are present in a note, `open-mode` takes precedence.
 
-Global default (Settings -> XU View Mode): Follow Obsidian default / Reading / Editing. Per-note frontmatter always wins. Applies on first open only; manual switching is never overridden.
+Global default (Settings -> XU View Mode): Follow Obsidian default / Reading / Editing. Per-note frontmatter always wins. The mode is applied each time the note opens; manual switching is kept while staying on the note.
 
 ## 设置说明
 

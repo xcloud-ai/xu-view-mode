@@ -33,7 +33,7 @@ interface I18NDict {
 const I18N: Record<string, I18NDict> = {
   zh: {
     setting_title: "XU View Mode（打开模式记忆）",
-    setting_header_desc: "在笔记 frontmatter 写 open-mode: reading / edit，打开时自动切换对应模式；未写的笔记按下方全局默认。仅首次打开生效，手动切换不被打回.",
+    setting_header_desc: "在笔记 frontmatter 写 open-mode: reading / edit，打开时自动切换对应模式；未写的笔记按下方全局默认。每次打开都按 frontmatter 生效，查看期间手动切换不被打回.",
     setting_language: "界面语言",
     setting_language_desc: "切换中文 / English",
     setting_default_mode: "默认打开模式",
@@ -49,7 +49,7 @@ const I18N: Record<string, I18NDict> = {
   },
   en: {
     setting_title: "XU View Mode",
-    setting_header_desc: "Add open-mode: reading / edit to frontmatter to control how a note opens; notes without it fall back to the global default below. Applies on first open only; manual switching is never overridden.",
+    setting_header_desc: "Add open-mode: reading / edit to frontmatter to control how a note opens; notes without it fall back to the global default below. The mode is applied every time the note opens; manual switching is kept during the current view.",
     setting_language: "Language",
     setting_language_desc: "Switch Chinese / English",
     setting_default_mode: "Default open mode",
@@ -73,8 +73,13 @@ const DEFAULT_SETTINGS: PluginSettings = {
 
 export default class XuViewMode extends Plugin {
   settings!: PluginSettings;
-  /** 「标签页 × 文件」组合只应用一次；标签页关闭自动回收 */
-  private _applied = new WeakMap<WorkspaceLeaf, Set<string>>();
+  /**
+   * 每个标签页「当前已应用的文件路径」（单值）。
+   * - 与当前文件相同：重复事件（焦点变化等），跳过——保护用户的手动切换
+   * - 导航到别的文件后记录被覆盖；再次打开同一文件时记录不同 → 重新应用
+   * - 标签页关闭自动回收
+   */
+  private _current = new WeakMap<WorkspaceLeaf, string>();
   /** 文件路径 → 元数据等待 Promise（多标签页共享同一个等待，避免重复挂事件） */
   private _metaWaits = new Map<string, Promise<void>>();
 
@@ -182,16 +187,6 @@ export default class XuViewMode extends Plugin {
     return this.normalizeMode(this.settings.defaultMode);
   }
 
-  /** 取出/建立标签页的「已应用文件」集合 */
-  private appliedSet(leaf: WorkspaceLeaf): Set<string> {
-    let set = this._applied.get(leaf);
-    if (!set) {
-      set = new Set<string>();
-      this._applied.set(leaf, set);
-    }
-    return set;
-  }
-
   /**
    * 文件被打开/激活时应用模式。
    * 关键：不使用 workspace.activeLeaf —— 它可能指向大纲面板等任意持有焦点的
@@ -201,15 +196,16 @@ export default class XuViewMode extends Plugin {
   async handleFileOpen(file: TFile): Promise<void> {
     if (!file) return;
 
-    // 所有正在显示该文件的 markdown 标签页，且本组合尚未应用过
+    // 所有正在显示该文件、且当前记录不是该文件的 markdown 标签页。
+    // 记录相同 = 焦点变化等重复事件：跳过，保护用户刚才的手动切换。
     let leaves: MdLeaf[] = this.app.workspace
       .getLeavesOfType("markdown")
       .filter(isMdLeaf)
-      .filter((l) => l.view.file?.path === file.path && !this._applied.get(l)?.has(file.path));
+      .filter((l) => l.view.file?.path === file.path && this._current.get(l) !== file.path);
     if (leaves.length === 0) return;
 
     // 元数据尚未解析：等待，绝不在此刻提前套用全局默认
-    // （否则默认阅读会先切换并登记，随后解析出的 open-mode: edit 被永久跳过）
+    // （否则默认阅读会先切换并登记，随后解析出的 open-mode: edit 被跳过）
     if (!this.isMetadataReady(file)) await this.whenMetadataReady(file);
 
     // 等待期间标签页可能已关闭：复验后逐个处理
@@ -217,19 +213,18 @@ export default class XuViewMode extends Plugin {
     for (const leaf of leaves) {
       const view = leaf.view;
       if (view.file?.path !== file.path) continue;
-      const applied = this.appliedSet(leaf);
-      if (applied.has(file.path)) continue; // 等待期间别处已处理
+      if (this._current.get(leaf) === file.path) continue; // 等待期间别处已处理
 
       const target = this.getTargetMode(file);
       if (!target) {
         // 真正的 follow（已确认无 open-mode 且全局为跟随）：登记避免重复计算
-        applied.add(file.path);
+        this._current.set(leaf, file.path);
         continue;
       }
 
       // 幂等：已是目标模式则只登记不切换（零视觉抖动）
       if (view.getMode() === target) {
-        applied.add(file.path);
+        this._current.set(leaf, file.path);
         continue;
       }
 
@@ -242,7 +237,7 @@ export default class XuViewMode extends Plugin {
         source: false,
       };
       await leaf.setViewState(viewState);
-      applied.add(file.path);
+      this._current.set(leaf, file.path);
     }
   }
 }
