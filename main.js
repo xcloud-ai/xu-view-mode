@@ -5,7 +5,9 @@
 const { Plugin, Setting, PluginSettingTab } = require('obsidian');
 
 const REPO_URL = 'https://github.com/xcloud-ai/xu-view-mode';
-const FM_KEY = 'open-mode'; // frontmatter 专用键：只读不写，不碰用户数据
+const FM_KEY = 'open-mode'; // 本插件专用键：只读不写，不碰用户数据
+// 兼容老牌插件 Force note view mode 的键名，方便其用户零改动迁移
+const LEGACY_UI_KEY = 'obsidianUIMode';
 
 const I18N = {
   zh: {
@@ -44,7 +46,8 @@ const I18N = {
 
 const DEFAULT_SETTINGS = {
   language: 'zh',
-  defaultMode: 'follow', // follow | reading | edit
+  // 出厂默认：未写 open-mode 的笔记一律用阅读模式打开
+  defaultMode: 'reading', // follow | reading | edit
 };
 
 class XuViewMode extends Plugin {
@@ -59,6 +62,8 @@ class XuViewMode extends Plugin {
     // 「标签页 × 文件」组合只应用一次（WeakMap，标签页关闭自动回收）：
     // 同一组合再次打开不强制，尊重用户手动切换；新标签页打开则正常应用
     this._applied = new WeakMap();
+    // 文件路径 → 元数据等待 Promise（多标签页共享同一个等待）
+    this._metaWaits = new Map();
 
     // 事件注册延后到布局就绪（官方 load-time 性能规范：启动期零开销）
     this.app.workspace.onLayoutReady(() => {
@@ -81,49 +86,139 @@ class XuViewMode extends Plugin {
     await this.saveData(this.settings);
   }
 
-  // 解析目标视图模式：frontmatter open-mode 优先，其次全局默认
-  // 返回 'preview' | 'source'；follow（不干预）返回 null
-  getTargetMode(file) {
-    const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
-    const raw = fm ? String(fm[FM_KEY] || '').trim().toLowerCase() : '';
-    if (raw === 'reading' || raw === 'read' || raw === 'preview') return 'preview';
-    if (raw === 'edit' || raw === 'editing' || raw === 'source' || raw === 'live') return 'source';
-    const d = this.settings.defaultMode;
-    if (d === 'reading') return 'preview';
-    if (d === 'edit') return 'source';
+  /**
+   * 元数据是否已完成解析。
+   * getFileCache 返回 null 表示「尚未解析」，不能等同于「没有 frontmatter」，
+   * 否则会把 open-mode 误判为未设置（edit 时灵时不灵的根因）。
+   */
+  isMetadataReady(file) {
+    return this.app.metadataCache.getFileCache(file) != null;
+  }
+
+  /**
+   * 等待文件元数据解析完成：由 metadataCache 的 changed / resolved 事件唤醒，
+   * 超时兜底（极端情况下缓存事件丢失也不永久挂起）。
+   * 同一文件的多个标签页共享同一个等待 Promise。
+   */
+  whenMetadataReady(file, timeoutMs = 3000) {
+    if (this.app.metadataCache.getFileCache(file)) return Promise.resolve();
+    const existing = this._metaWaits.get(file.path);
+    if (existing) return existing;
+
+    let p = new Promise((resolve) => {
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        this.app.metadataCache.offref(changedRef);
+        this.app.metadataCache.offref(resolvedRef);
+        resolve();
+      };
+      const changedRef = this.app.metadataCache.on('changed', (f) => {
+        if (f.path === file.path) finish();
+      });
+      this.registerEvent(changedRef);
+      const resolvedRef = this.app.metadataCache.on('resolved', finish);
+      this.registerEvent(resolvedRef);
+      const timer = setTimeout(finish, timeoutMs);
+    }).finally(() => this._metaWaits.delete(file.path));
+
+    this._metaWaits.set(file.path, p);
+    return p;
+  }
+
+  /** 把 frontmatter 原始值归一化为视图模式；无法识别返回 null */
+  normalizeMode(raw) {
+    const v = String(raw ?? '').trim().toLowerCase();
+    if (!v) return null;
+    if (v === 'reading' || v === 'read' || v === 'preview') return 'preview';
+    if (v === 'edit' || v === 'editing' || v === 'source' || v === 'live') return 'source';
     return null;
   }
 
-  handleFileOpen(file) {
-    if (!file) return; // active-leaf-change 触发时可能无活动文件
-    // 快速路径：活动视图非 markdown（如画板/PDF/搜索）直接返回，微秒级
-    const leaf = this.app.workspace.activeLeaf;
-    const view = leaf && leaf.view;
-    if (!view || view.getViewType() !== 'markdown') return;
-
-    let applied = this._applied.get(leaf);
-    if (!applied) {
-      applied = new Set();
-      this._applied.set(leaf, applied);
+  /**
+   * 解析目标视图模式，优先级：
+   *   open-mode > obsidianUIMode（老牌插件兼容）> 全局默认
+   * 返回 'preview' | 'source'；follow（不干预）返回 null。
+   */
+  getTargetMode(file) {
+    const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
+    if (fm) {
+      // 1) 本插件键
+      const own = this.normalizeMode(fm[FM_KEY]);
+      if (own) return own;
+      // 2) 老牌 Force note view mode 键：其取值 preview / source / live
+      if (fm[LEGACY_UI_KEY] != null) {
+        const legacy = this.normalizeMode(fm[LEGACY_UI_KEY]);
+        if (legacy) return legacy;
+      }
     }
-    if (applied.has(file.path)) return; // 该组合已应用过，不打扰手动切换
+    // 3) 全局默认
+    return this.normalizeMode(this.settings.defaultMode);
+  }
 
-    const target = this.getTargetMode(file);
-    if (!target) return; // follow：交给 Obsidian 原生行为
+  /** 取出/建立标签页的「已应用文件」集合 */
+  appliedSet(leaf) {
+    let set = this._applied.get(leaf);
+    if (!set) {
+      set = new Set();
+      this._applied.set(leaf, set);
+    }
+    return set;
+  }
 
-    // 幂等：已是目标模式则只登记不切换（零视觉抖动）
-    if (view.getMode() === target) {
+  /**
+   * 文件被打开/激活时应用模式。
+   * 关键：不使用 workspace.activeLeaf —— 它可能指向大纲面板等任意持有焦点的
+   * 侧栏视图（这正是 edit 标签时灵时不灵的根因）。改为枚举所有正在显示
+   * 该文件的 markdown 标签页，逐个处理。
+   */
+  async handleFileOpen(file) {
+    if (!file) return;
+
+    // 所有正在显示该文件的 markdown 标签页，且本组合尚未应用过
+    let leaves = this.app.workspace
+      .getLeavesOfType('markdown')
+      .filter((l) => l.view.file?.path === file.path && !this._applied.get(l)?.has(file.path));
+    if (leaves.length === 0) return;
+
+    // 元数据尚未解析：等待，绝不在此刻提前套用全局默认
+    // （否则默认阅读会先切换并登记，随后解析出的 open-mode: edit 被永久跳过）
+    if (!this.isMetadataReady(file)) await this.whenMetadataReady(file);
+
+    // 等待期间标签页可能已关闭：复验后逐个处理
+    leaves = leaves.filter((l) => l.view && l.view.getViewType() === 'markdown');
+    for (const leaf of leaves) {
+      const view = leaf.view;
+      if (view.file?.path !== file.path) continue;
+      const applied = this.appliedSet(leaf);
+      if (applied.has(file.path)) continue; // 等待期间别处已处理
+
+      const target = this.getTargetMode(file);
+      if (!target) {
+        // 真正的 follow（已确认无 open-mode 且全局为跟随）：登记避免重复计算
+        applied.add(file.path);
+        continue;
+      }
+
+      // 幂等：已是目标模式则只登记不切换（零视觉抖动）
+      if (view.getMode() === target) {
+        applied.add(file.path);
+        continue;
+      }
+
+      // 读当前完整视图状态再改，保留其余字段（如 eState 滚动位置）；
+      // edit 统一落到 live preview 形态（source=false）
+      const viewState = leaf.getViewState();
+      viewState.state = {
+        ...(viewState.state || {}),
+        mode: target,
+        source: false,
+      };
+      await leaf.setViewState(viewState);
       applied.add(file.path);
-      return;
     }
-
-    // 切换：edit 统一落到 live preview 形态（state.source=false）
-    leaf.setViewState({
-      type: 'markdown',
-      state: { mode: target, source: false },
-      active: true,
-    });
-    applied.add(file.path);
   }
 }
 

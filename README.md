@@ -12,7 +12,8 @@ Set `open-mode` in frontmatter to control how each note opens (reading or editin
 ## 功能特性
 
 - **frontmatter 强制模式**：`open-mode` 定义单篇笔记打开用阅读或编辑模式
-- **全局默认**：未设置的笔记按全局默认（阅读/编辑/跟随原生）打开
+- **全局默认**：未设置的笔记按全局默认打开（默认阅读，可改编辑/跟随原生）
+- **兼容老插件**：识别 Force note view mode 的 `obsidianUIMode` 键，旧笔记零改动迁移
 - **不打扰**：仅首次打开生效，手动切换不被打回（同一标签页不重复强制）
 - **性能无感**：事件注册延后到布局就绪，metadataCache O(1) 读取，模式相同则零操作
 - **多端支持**：桌面与移动端可用，不修改任何笔记数据
@@ -20,7 +21,8 @@ Set `open-mode` in frontmatter to control how each note opens (reading or editin
 ### Features
 
 - **Per-note open mode**: `open-mode` frontmatter forces reading or editing view for that note
-- **Global default**: notes without `open-mode` follow the global default (follow / reading / editing)
+- **Global default**: notes without `open-mode` follow the global default (reading by default; editing / follow also available)
+- **Legacy-friendly**: recognizes the `obsidianUIMode` key from Force note view mode, so existing notes migrate with zero changes
 - **Non-intrusive**: applies on first open only; manual switching is never overridden
 - **Zero-perception performance**: event registration deferred to layout-ready, O(1) metadata reads, no-op when already in target mode
 - **Multi-platform**: desktop and mobile, never modifies note data
@@ -88,13 +90,16 @@ open-mode: edit
 
 推荐统一用 `edit` / `reading`，最短最直观。
 
+> [!NOTE] 从 Force note view mode 迁移
+> 同时兼容老牌插件 **Force note view mode** 的 `obsidianUIMode` 键（取值 `preview` / `source` / `live`）。原来笔记里写的 `obsidianUIMode` 无需批量修改即可直接生效；若与 `open-mode` 同时存在，以 `open-mode` 为准。
+
 ### 第二步（可选）：设置全局默认
 
 设置 → 第三方插件 → XU View Mode → 默认打开模式：
 
-- **跟随 Obsidian 原生设置**（默认）：不干预没有 `open-mode` 的笔记，行为和没装插件一样
-- **阅读模式**：所有没写 `open-mode` 的笔记都用阅读模式打开
+- **阅读模式**（默认）：所有没写 `open-mode` 的笔记都用阅读模式打开
 - **编辑模式**：所有没写 `open-mode` 的笔记都用编辑模式打开
+- **跟随 Obsidian 原生设置**：不干预没有 `open-mode` 的笔记，行为和没装插件一样
 
 单个笔记的 `open-mode` 永远优先于全局默认。
 
@@ -122,6 +127,8 @@ open-mode: edit
 
 Aliases also accepted (case-insensitive): `editing` / `source` / `live` (edit), `read` / `preview` (reading). Invalid values are ignored and fall back to the global default.
 
+> **Migrating from Force note view mode?** The legacy `obsidianUIMode` key (`preview` / `source` / `live`) is also recognized, so your existing notes work without any changes. If both keys are present in a note, `open-mode` takes precedence.
+
 Global default (Settings -> XU View Mode): Follow Obsidian default / Reading / Editing. Per-note frontmatter always wins. Applies on first open only; manual switching is never overridden.
 
 ## 设置说明
@@ -129,13 +136,13 @@ Global default (Settings -> XU View Mode): Follow Obsidian default / Reading / E
 | 设置项 | 说明 |
 |--------|------|
 | 界面语言 | 中文 / English 切换 |
-| 默认打开模式 | 跟随 Obsidian 原生设置（默认）/ 阅读模式 / 编辑模式，仅对未写 open-mode 的笔记生效 |
+| 默认打开模式 | 阅读模式（默认）/ 编辑模式 / 跟随 Obsidian 原生设置，仅对未写 open-mode 的笔记生效 |
 
 ## 技术说明
 
 - frontmatter 键 `open-mode` 只读不写；不修改用户数据
 - `edit` 切换到 live preview 形态；`reading` 切换到阅读视图
-- 优先级：frontmatter > 全局默认 > Obsidian 原生设置
+- 优先级：`open-mode` > `obsidianUIMode`（兼容老插件）> 全局默认 > Obsidian 原生设置
 
 ## 致谢 / Credits
 

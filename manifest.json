@@ -1,7 +1,7 @@
 {
   "id": "xu-view-mode",
   "name": "XU View Mode",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "minAppVersion": "1.4.0",
   "description": "打开模式记忆：按笔记元数据定义打开时用阅读或编辑模式，全局默认可设，性能无感.",
   "author": "旭说",
